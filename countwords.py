@@ -21,7 +21,7 @@ def dump_freq(filename, freq):
  
 def count_text(text):
     fdist = FreqDist();
-    wordlist = re.findall(r"[']?[A-Za-z]+", text);
+    wordlist = re.findall(r"[A-Za-z]+", text);
     for word in wordlist:
         fdist[word.lower()] += 1
     return fdist
@@ -71,6 +71,7 @@ def test():
     print(get_lemma('thinking'));
     print(get_lemma('further'));
     print(get_lemma('worse'));
+    print(get_lemma('was'));
     a = count_text("test you. test me. test others.");
     b = count_text("you're right! I'm OK!");
     print(a);
