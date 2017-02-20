@@ -12,7 +12,7 @@ sub save_file {
 
 sub dump_page {
     my ($page_prefix, $page_no) = @_;
-	my $filename = sprintf(".\\bible\\%s%d.txt", $page_prefix, $page_no);
+	my $filename = sprintf(".\\data\\bible\\%s%d.txt", $page_prefix, $page_no);
 	if(-e $filename) {
 		return;
 	}

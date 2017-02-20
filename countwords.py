@@ -7,6 +7,7 @@ from nltk.corpus import wordnet
 from nltk.stem.wordnet import WordNetLemmatizer
 import string
 import re
+import argparse
 
 def merge_freq(freq1, freq2):
     for (key, value) in freq2.items():
@@ -77,9 +78,21 @@ def test():
     print(a);
     print(b);
     print(merge_freq(a, b));
-    
-test();    
-freq = count_dir("bible");
-dump_freq("output/words.txt", freq);
-lemfreq = wordfreq2lemma(freq);
-dump_freq("output/lemmas.txt", lemfreq);
+
+def main():    
+    parser = argparse.ArgumentParser();
+    parser.add_argument("-i", "--input", default="data");
+    parser.add_argument("-o", "--output", default="output");
+    args = parser.parse_args();
+    print("Input directory: %s." % args.input);
+    print("Output directory: %s." % args.output);
+    if not os.path.exists(args.output):
+        os.makedirs(args.output);
+    freq = count_dir(args.input);
+    dump_freq(args.output + "/words.txt", freq);
+    lemfreq = wordfreq2lemma(freq);
+    dump_freq(args.output + "/lemmas.txt", lemfreq);
+
+test();
+main();
+
