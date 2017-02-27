@@ -79,7 +79,7 @@ def test():
     print(get_lemma('was'));
     a = count_text("test you. test me. test others.", {});
     b = count_text("you're right! I'm OK!", {});
-    c = count_text("I'm not finish\\nI'm\tfinish", {'unescape': True});
+    c = count_text("I'm\tnot\\tfinish\\nI'm\\tfinish", {'unescape': True});
     print(a);
     print(b);
     print(c);
