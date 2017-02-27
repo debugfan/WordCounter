@@ -20,27 +20,31 @@ def dump_freq(filename, freq):
         fo.write("%s, %s\n" % (key, value));
     fo.close()
  
-def count_text(text):
+def count_text(text, options):
     fdist = FreqDist();
+    if 'unescape' in options and options['unescape']:
+        text = text.replace("\\r", " ");
+        text = text.replace("\\n", " ");
+        text = text.replace("\\t", " ");
     wordlist = re.findall(r"[A-Za-z]+", text);
     for word in wordlist:
         fdist[word.lower()] += 1
     return fdist
 
-def count_file(filename):
+def count_file(filename, options):
     fdist = FreqDist();
     infile = open(filename)
     all_text = infile.read()
-    fdist = count_text(all_text);
+    fdist = count_text(all_text, options);
     infile.close()
     return fdist;
     
-def count_dir(dirname):
+def count_dir(dirname, options):
     fdist = FreqDist();
     for dirpath, dirnames, filenames in os.walk(dirname):
         for file in filenames:
             fullpath = os.path.join(dirpath, file)
-            tmp_freq = count_file(fullpath);
+            tmp_freq = count_file(fullpath, options);
             fdist = merge_freq(fdist, tmp_freq);
     return fdist;
 
@@ -73,22 +77,32 @@ def test():
     print(get_lemma('further'));
     print(get_lemma('worse'));
     print(get_lemma('was'));
-    a = count_text("test you. test me. test others.");
-    b = count_text("you're right! I'm OK!");
+    a = count_text("test you. test me. test others.", {});
+    b = count_text("you're right! I'm OK!", {});
+    c = count_text("I'm not finish\\nI'm\tfinish", {'unescape': True});
     print(a);
     print(b);
+    print(c);
     print(merge_freq(a, b));
 
 def main():    
     parser = argparse.ArgumentParser();
     parser.add_argument("-i", "--input", default="data");
     parser.add_argument("-o", "--output", default="output");
+    parser.add_argument("-v", "--verbose", action="store_true");
+    parser.add_argument("-e", "--unescape", action="store_true");
     args = parser.parse_args();
     print("Input directory: %s." % args.input);
     print("Output directory: %s." % args.output);
     if not os.path.exists(args.output):
         os.makedirs(args.output);
-    freq = count_dir(args.input);
+    opts = {};    
+    if args.unescape:
+        opts['unescape'] = True;
+    else:
+        opts['unescape'] = False;
+    print("Unescape option: %s" % opts['unescape']);  
+    freq = count_dir(args.input, opts);
     dump_freq(args.output + "/words.txt", freq);
     lemfreq = wordfreq2lemma(freq);
     dump_freq(args.output + "/lemmas.txt", lemfreq);
