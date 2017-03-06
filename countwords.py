@@ -30,12 +30,6 @@ def merge_fdist(fdist1, fdist2):
         for (word, count) in words.items():
             merged = fdist_add(merged, word, count);
     return merged;
-
-def dump_flist(filename, flist):
-    fo = open(filename, "w")
-    for item in flist:
-        fo.write("%s, %s\n" % (item[0], item[1]));
-    fo.close()
  
 def count_text(text, options):
     fdist = {};
@@ -101,7 +95,9 @@ def get_synset_lemma(word, syn):
         return word;
     lemma = wnl.lemmatize(word, syn.pos);
     if(lemma.lower() == word.lower()):
-        return word;
+        lemma = wnl.lemmatize(word.lower(), syn.pos);
+        if(lemma.lower() == word.lower()):
+            return word;
     cands = syn.lemma_names;
     for cand in cands:
         if(lemma.lower() == cand.lower()):
@@ -117,7 +113,13 @@ def get_lemma(word):
             return lemma;
     return word;
 
-def unify_dist(fdist):
+def dump_flist(filename, flist):
+    fo = open(filename, "w")
+    for item in flist:
+        fo.write("%s, %s\n" % (item[0], item[1]));
+    fo.close()
+    
+def unify_fdist(fdist):
     unifed = {};
     for (k, v) in fdist.items():
         if (len(v['items'])) == 1:
@@ -137,21 +139,26 @@ def wordlist2lemma(flist):
             lemmaflist = fdist_add(fdist, lemma, word[1]);
     return fdist;
 
-def test():    
+def test():
+    print(get_lemma('Worst'));    
     print(get_lemma('dogs'));
     print(get_lemma('thinking'));
     print(get_lemma('further'));
-    print(get_lemma('worse'));
+    print(get_lemma('worst'));
     print(get_lemma('was'));
     print(get_lemma('lest'));
     print(get_lemma('balabalabala'));
-    a = count_text("test you. test me. test others.", {});
-    b = count_text("you're right! I'm OK!", {});
-    c = count_text("I'm\tnot\\tfinish\\nI'm\\tfinish", {'unescape': True});
-    print(a);
-    print(b);
+    print(get_lemma('Weeeeeeeeeeeeeeeeeee'));
+    print(get_lemma('iPad'));
+    a = count_text("Test you, test me, and test others.", {});
+    b = count_text("you're right! I'm not right!", {});
+    c = count_text("I did\tnot\\tfinish\\nI do\\tfinish.", {'unescape': True});
+    print(unify_fdist(a));
+    print(unify_fdist(b));
+    print(unify_fdist(merge_fdist(a, b)));
     print(c);
-    print(merge_fdist(a, b));
+    print(unify_fdist(c));
+    print(unify_fdist(wordlist2lemma(unify_fdist(c))));
 
 def main():    
     parser = argparse.ArgumentParser();
@@ -181,10 +188,10 @@ def main():
         os.makedirs(args.output);        
     word_file = args.output + "/" + args.prefix + "words.txt";
     lemma_file = args.output + "/" + args.prefix + "lemmas.txt";
-    flist = unify_dist(freq);
+    flist = unify_fdist(freq);
     dump_flist(word_file, flist);
     lemma_fdist = wordlist2lemma(flist);
-    lemma_flist = unify_dist(lemma_fdist);
+    lemma_flist = unify_fdist(lemma_fdist);
     dump_flist(lemma_file, lemma_flist);
     
 main();
