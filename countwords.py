@@ -140,6 +140,8 @@ def wordlist2lemma(flist):
     return fdist;
 
 def test():
+    print(get_lemma('hath'));
+    print(get_lemma('saith'));
     print(get_lemma('Worst'));    
     print(get_lemma('dogs'));
     print(get_lemma('thinking'));
