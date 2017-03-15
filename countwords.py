@@ -1,23 +1,20 @@
 #!/usr/bin/python
 
 import os
-from nltk.probability import FreqDist
-from nltk.tokenize import word_tokenize
-from nltk.corpus import wordnet
-from nltk.stem.wordnet import WordNetLemmatizer
 import string
 import re
 import argparse
+import collections
 
 def fdist_add(fdist, word, count):
     key = word.lower();
-    if fdist.has_key(key):
+    if key in fdist:
         fdist[key]['sum'] += count;
     else:
         fdist[key] = {};
         fdist[key]['sum'] = count;
         fdist[key]['items'] = {};
-    if(fdist[key]['items'].has_key(word)):
+    if word in fdist[key]['items']:
         fdist[key]['items'][word] += count;
     else:
         fdist[key]['items'][word] = count;
@@ -32,7 +29,7 @@ def merge_fdist(fdist1, fdist2):
     return merged;
  
 def count_text(text, options):
-    fdist = {};
+    fdist = collections.OrderedDict();
     if 'unescape' in options and options['unescape']:
         text = text.replace("\\r", " ");
         text = text.replace("\\n", " ");
@@ -43,7 +40,6 @@ def count_text(text, options):
     return fdist
 
 def count_file(filename, options):
-    fdist = {};
     infile = open(filename)
     all_text = infile.read()
     fdist = count_text(all_text, options);
@@ -51,16 +47,17 @@ def count_file(filename, options):
     return fdist;
     
 def count_dir(dirname, options):
-    fdist = {};
+    fdist = collections.OrderedDict();
     for dirpath, dirnames, filenames in os.walk(dirname):
         for file in filenames:
-            fullpath = os.path.join(dirpath, file)
+            fullpath = os.path.join(dirpath, file);
+            print("Count words of file: %s" % fullpath);
             tmp_freq = count_file(fullpath, options);
             fdist = merge_fdist(fdist, tmp_freq);
     return fdist;
 
 def count_path_list(path_list, options):
-    fdist = {};
+    fdist = collections.OrderedDict();
     for item in path_list:
         if os.path.isdir(item):
             print("Input directory: %s" % item);
@@ -73,46 +70,7 @@ def count_path_list(path_list, options):
             tmp = {};
         fdist = merge_fdist(fdist, tmp);
     return fdist;
-
-def get_synset_priority(syn):
-    if syn.pos == 'v':
-        return 0;
-    elif syn.pos == 'a':
-        return 1;
-    elif syn.pos == 'r':
-        return 2;
-    elif syn.pos == 'n':
-        return 3;
-    else:
-        return 4;
     
-def get_synset_lemma(word, syn):
-    wnl = WordNetLemmatizer();
-    if(syn.pos != 'v'
-        and syn.pos != 'a'
-        and syn.pos != 'r'
-        and syn.pos != 'n'):
-        return word;
-    lemma = wnl.lemmatize(word, syn.pos);
-    if(lemma.lower() == word.lower()):
-        lemma = wnl.lemmatize(word.lower(), syn.pos);
-        if(lemma.lower() == word.lower()):
-            return word;
-    cands = syn.lemma_names;
-    for cand in cands:
-        if(lemma.lower() == cand.lower()):
-            return lemma;
-    return word;
-    
-def get_lemma(word):
-    syns = wordnet.synsets(word);
-    syns = sorted(syns, key=get_synset_priority);
-    for syn in syns:
-        lemma = get_synset_lemma(word, syn);
-        if(lemma.lower() != word.lower()):
-            return lemma;
-    return word;
-
 def dump_flist(filename, flist):
     fo = open(filename, "w")
     for item in flist:
@@ -120,38 +78,15 @@ def dump_flist(filename, flist):
     fo.close()
     
 def unify_fdist(fdist):
-    unifed = {};
+    unifed = collections.OrderedDict();
     for (k, v) in fdist.items():
-        if (len(v['items'])) == 1:
-            for word in v['items']:
-                unifed[word] = v['sum'];
-        else:
-            unifed[k] = v['sum'];
+        basic_form = k.upper();
+        for word in v['items']:
+            basic_form = max(basic_form, word);
+        unifed[basic_form] = v['sum'];
     return sorted(unifed.items(), key=lambda x: x[1], reverse=True);      
-    
-def wordlist2lemma(flist):
-    fdist = {};
-    for word in flist:
-        lemma = get_lemma(word[0]);
-        if lemma.lower() == word[0].lower():
-            lemmaflist = fdist_add(fdist, word[0], word[1]);
-        else:
-            lemmaflist = fdist_add(fdist, lemma, word[1]);
-    return fdist;
 
 def test():
-    print(get_lemma('hath'));
-    print(get_lemma('saith'));
-    print(get_lemma('Worst'));    
-    print(get_lemma('dogs'));
-    print(get_lemma('thinking'));
-    print(get_lemma('further'));
-    print(get_lemma('worst'));
-    print(get_lemma('was'));
-    print(get_lemma('lest'));
-    print(get_lemma('balabalabala'));
-    print(get_lemma('Weeeeeeeeeeeeeeeeeee'));
-    print(get_lemma('iPad'));
     a = count_text("Test you, test me, and test others.", {});
     b = count_text("you're right! I'm not right!", {});
     c = count_text("I did\tnot\\tfinish\\nI do\\tfinish.", {'unescape': True});
@@ -160,15 +95,13 @@ def test():
     print(unify_fdist(merge_fdist(a, b)));
     print(c);
     print(unify_fdist(c));
-    print(unify_fdist(wordlist2lemma(unify_fdist(c))));
-
+    
 def main():    
     parser = argparse.ArgumentParser();
     parser.add_argument("-o", "--output", default="output");
-    parser.add_argument("-p", "--prefix", default="");
     parser.add_argument("-v", "--verbose", action="store_true");
-    parser.add_argument("-t", "--test", action="store_true");
     parser.add_argument("-e", "--unescape", action="store_true");
+    parser.add_argument("-t", "--test", action="store_true");
     parser.add_argument("input", nargs='*');
     args = parser.parse_args();
     opts = {};
@@ -185,15 +118,11 @@ def main():
         return;
     print("Unescape option: %s" % opts['unescape']);
     freq = count_path_list(args.input, opts);
-    print("Output directory: %s." % args.output);
-    if not os.path.exists(args.output):
-        os.makedirs(args.output);        
-    word_file = args.output + "/" + args.prefix + "words.txt";
-    lemma_file = args.output + "/" + args.prefix + "lemmas.txt";
+    print("Output file: %s." % args.output);
+    outdir = os.path.dirname(args.output);
+    if not os.path.exists(outdir):
+        os.makedirs(outdir); 
     flist = unify_fdist(freq);
-    dump_flist(word_file, flist);
-    lemma_fdist = wordlist2lemma(flist);
-    lemma_flist = unify_fdist(lemma_fdist);
-    dump_flist(lemma_file, lemma_flist);
+    dump_flist(args.output, flist);
     
 main();
