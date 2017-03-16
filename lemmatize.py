@@ -126,33 +126,57 @@ def wordlist2lemma(flist):
     fdist = collections.OrderedDict();
     wnl = WordNetLemmatizer();
     total = len(flist);
-    done = 0;
+    lemma_set = set();
+    inflections = {};
     milestone = 0;
+    done = 0;
     for word in flist:
         lemma = get_lemma(wnl, word[0]);
-        if lemma.lower() == word[0].lower():
-            lemmaflist = fdist_add(fdist, word[0], word[1]);
-        else:
-            lemmaflist = fdist_add(fdist, lemma, word[1]);
+        if lemma.lower() != word[0].lower():
+            lemma_set.add(lemma.lower());
+            inflections[word[0].lower()] = lemma;
         done += 1;
         if done*100/total >= milestone:
             milestone += 1;
-            print "status: %d/%d = %d%%" % (done, total, int(done*100/total));
+            print "preprocessing status: %d/%d = %d%%" % (done, total, int(done*100/total));
+            
+    milestone = 0;
+    done = 0;
+    for word in flist:
+        if word[0].lower() in lemma_set:
+            lemmaflist = fdist_add(fdist, word[0].lower(), word[1]);
+        elif word[0].lower() in inflections:
+            lemmaflist = fdist_add(fdist, inflections[word[0].lower()], word[1]);
+        else:
+            lemmaflist = fdist_add(fdist, word[0], word[1]);
+        done += 1;
+        if done*100/total >= milestone:
+            milestone += 1;
+            print "processing status: %d/%d = %d%%" % (done, total, int(done*100/total));
+    
     return fdist;
 
 def test():
-    print(get_lemma('hath'));
-    print(get_lemma('saith'));
-    print(get_lemma('Worst'));    
-    print(get_lemma('dogs'));
-    print(get_lemma('thinking'));
-    print(get_lemma('further'));
-    print(get_lemma('worst'));
-    print(get_lemma('was'));
-    print(get_lemma('lest'));
-    print(get_lemma('balabalabala'));
-    print(get_lemma('Weeeeeeeeeeeeeeeeeee'));
-    print(get_lemma('iPad'));
+    wnl = WordNetLemmatizer();
+    print(get_lemma(wnl, 'cutlass'));
+    print(get_lemma(wnl, 'cutlas'));
+    print(get_lemma(wnl, 'puss'));
+    print(get_lemma(wnl, 'pus'));
+    print(get_lemma(wnl, 'doss'));
+    print(get_lemma(wnl, 'ass'));
+    print(get_lemma(wnl, 'as'));
+    print(get_lemma(wnl, 'hath'));
+    print(get_lemma(wnl, 'saith'));
+    print(get_lemma(wnl, 'Worst'));    
+    print(get_lemma(wnl, 'dogs'));
+    print(get_lemma(wnl, 'thinking'));
+    print(get_lemma(wnl, 'further'));
+    print(get_lemma(wnl, 'worst'));
+    print(get_lemma(wnl, 'was'));
+    print(get_lemma(wnl, 'lest'));
+    print(get_lemma(wnl, 'balabalabala'));
+    print(get_lemma(wnl, 'Weeeeeeeeeeeeeeeeeee'));
+    print(get_lemma(wnl, 'iPad'));
 
 def main():    
     parser = argparse.ArgumentParser();

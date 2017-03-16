@@ -25,7 +25,7 @@ def main():
     input = sys.argv[1];
     print "input directory: %s" % input;
     output = sys.argv[2];
-    print "out directory: %s" % output;
+    print "output directory: %s" % output;
     if not os.path.exists(output):
         os.makedirs(output);
     traverse_dir(input, output);
